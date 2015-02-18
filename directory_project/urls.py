@@ -44,5 +44,6 @@ urlpatterns += patterns('directory_app.extensionViews',
     (r'^search_bar/$', 'search_bar'),
     (r'^extSearch/$', 'search'),
     (r'^submitProfileUpdate/$', 'submitProfileUpdate'),
+    (r'^checkSessionLogin/$', 'checkSessionLogin'),
     
 )

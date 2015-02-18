@@ -20,6 +20,51 @@ log = logging.getLogger(__name__)
 
 
 
+@csrf_exempt
+def checkSessionLogin(request):
+    if request.method == 'POST':
+        bLogin = request.POST["bLogin"].strip()
+        
+        data = {'success':'success'}
+        
+        if bLogin == 'True':
+            if 'googleExtension_id' in request.session:
+                google_id = request.session['googleExtension_id']
+                if UserInfo.objects.filter(google_id=google_id):
+                    userInfo = UserInfo.objects.get(google_id=google_id)
+                    googleUserInfo = GoogleUserInfo.objects.get(google_id=google_id)
+                
+                    data['user'] = 'loggedIn'
+		    data['google_id'] = userInfo.google_id
+                    data['firstName'] = userInfo.firstName
+                    data['lastName'] = userInfo.lastName
+                    data['school'] = userInfo.school
+                    data['grade'] = userInfo.grade
+                    data['job'] = userInfo.job
+                    data['subject'] = userInfo.subject
+                    data['roomNumber'] = userInfo.roomNumber
+                    data['phoneExtension'] = userInfo.phoneExtension
+                    data['picture'] = googleUserInfo.googleAvatar
+                    
+                    # for testing purposes
+                    #request.session.delete()
+                    
+                else:
+                    data = {'error': "no user in system",}
+            else:
+                data = {'error': "no session id",}
+        else:
+            data = {'error': "no login password",}
+    else:
+        data = {'error': "no post made",}
+        
+            
+    return HttpResponse(json.dumps(data))
+
+
+
+
+
 
 @csrf_exempt
 def login(request):
@@ -77,6 +122,19 @@ def login(request):
                 firstName = firstName,
                 email=google_email,
             )
+            
+        # create google user 
+        #Check to see if a google account has been setup yet
+        if GoogleUserInfo.objects.filter(google_id=google_id):
+            googleUserInfo = GoogleUserInfo.objects.get(google_id=google_id)
+        else:
+            googleUserInfo = GoogleUserInfo.objects.create(
+                user = user,
+                google_id = google_id,
+                googleAvatar = picture,
+            )
+        
+        
         data['user'] = 'loggedIn'
         data['firstName'] = userInfo.firstName
         data['lastName'] = userInfo.lastName
@@ -86,6 +144,11 @@ def login(request):
         data['subject'] = userInfo.subject
         data['roomNumber'] = userInfo.roomNumber
         data['phoneExtension'] = userInfo.phoneExtension
+        data['picture'] = googleUserInfo.googleAvatar
+        
+        #Now save id into a session cookie
+        request.session['googleExtension_id'] = google_id
+        request.session.set_expiry(3000000)
         
     else:
         data = {
@@ -429,7 +492,7 @@ def submitProfileUpdate(request):
             userInfo.job = job
             userInfo.subject = subject
             userInfo.roomNumber = roomNumber
-            if phone:
+            if phoneExtension:
                 userInfo.phoneExtension = int(phoneExtension)
             else:
                 userInfo.phoneExtension = None

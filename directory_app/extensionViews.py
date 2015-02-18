@@ -35,6 +35,7 @@ def checkSessionLogin(request):
                     googleUserInfo = GoogleUserInfo.objects.get(google_id=google_id)
                 
                     data['user'] = 'loggedIn'
+		    data['google_id'] = userInfo.google_id
                     data['firstName'] = userInfo.firstName
                     data['lastName'] = userInfo.lastName
                     data['school'] = userInfo.school
